@@ -1,5 +1,6 @@
 const { GENESIS_DATA, MINE_RATE } = require('./config');
 const cryptoHash = require('./crypto-hash');
+const hexToBinary = require('hex-to-binary');
 
 class Block {
   constructor({ timestamp, lastHash, data, hash, nonce, difficulty }) {
@@ -18,7 +19,7 @@ class Block {
 
   // 다음 블록을 생성하는 로직
   static mineBlock({ lastBlock, data }) {
-    let timestamp = Date.now();
+    let hash, timestamp;
     const lastHash = lastBlock.hash;
     let difficulty = lastBlock.difficulty;
     let nonce = 0;
@@ -32,8 +33,8 @@ class Block {
         originalBlock: lastBlock,
         timestamp
       });
-    } while (cryptoHash(timestamp, lastHash, data, nonce, difficulty)
-      .substring(0, difficulty) !== '0'.repeat(difficulty));
+      hash = cryptoHash(timestamp, lastHash, data, nonce, difficulty);
+    } while (hexToBinary(hash).substring(0, difficulty) !== '0'.repeat(difficulty));
 
     // hash 값은 현재 시간, 이전블록의 해시값, 데이터를 가지고 계산한다.
     return new this({
@@ -42,11 +43,16 @@ class Block {
       data,
       nonce,
       difficulty,
-      hash: cryptoHash(timestamp, lastHash, data, nonce, difficulty)
+      hash
     });
   }
 
+  // 목표한 인터벌을 맞추기 위해 difficult를 증감한다.
+  // 이전 블록의 생성 시간과 주어진 timestamp를 비교한다.
   static adjustDifficulty({ originalBlock, timestamp }) {
+
+    if (originalBlock.difficulty < 1) return 1;
+
     if (timestamp - originalBlock.timestamp > MINE_RATE) {
       return originalBlock.difficulty - 1;
     }

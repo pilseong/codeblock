@@ -1,0 +1,13 @@
+@redirect
+
+###
+GET http://localhost:3000/api/blocks
+
+
+###
+POST http://localhost:3000/api/mine
+Content-Type: application/json
+
+{
+  "data": "added block"
+}
